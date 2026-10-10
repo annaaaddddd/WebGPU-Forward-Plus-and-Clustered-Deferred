@@ -3,7 +3,7 @@ import { toRadians } from "../math_util";
 import { device, canvas, fovYDegrees, aspectRatio } from "../renderer";
 
 class CameraUniforms {
-    readonly buffer = new ArrayBuffer(16 * 4);
+    readonly buffer = new ArrayBuffer(52 * 4);
     private readonly floatView = new Float32Array(this.buffer);
 
     set viewProjMat(mat: Float32Array) {
@@ -12,6 +12,29 @@ class CameraUniforms {
     }
 
     // TODO-2: add extra functions to set values needed for light clustering here
+    set viewMat(mat: Float32Array) {
+        this.floatView.set(mat, 16);
+    }
+
+    set inverseProjMat(mat: Float32Array) {
+        this.floatView.set(mat, 32);
+    }
+
+    set screenWidth(w: number) {
+        this.floatView[48] = w;
+    }
+
+    set screenHeight(h: number) {
+        this.floatView[49] = h;
+    }
+
+    set nearPlane(n: number) {
+        this.floatView[50] = n;
+    }
+    
+    set farPlane(p: number) {
+        this.floatView[51] = p;
+    }
 }
 
 export class Camera {
@@ -48,6 +71,13 @@ export class Camera {
         this.projMat = mat4.perspective(toRadians(fovYDegrees), aspectRatio, Camera.nearPlane, Camera.farPlane);
 
         this.rotateCamera(0, 0); // set initial camera vectors
+
+        const inverseProjMat = mat4.inverse(this.projMat);
+        this.uniforms.inverseProjMat = inverseProjMat;
+        this.uniforms.farPlane = Camera.farPlane;
+        this.uniforms.nearPlane = Camera.nearPlane;
+        this.uniforms.screenWidth = canvas.width;
+        this.uniforms.screenHeight = canvas.height;
 
         window.addEventListener('keydown', (event) => this.onKeyEvent(event, true));
         window.addEventListener('keyup', (event) => this.onKeyEvent(event, false));
@@ -138,6 +168,7 @@ export class Camera {
         this.uniforms.viewProjMat = viewProjMat;
 
         // TODO-2: write to extra buffers needed for light clustering here
+        this.uniforms.viewMat = viewMat;
 
         // upload `this.uniforms.buffer` (host side) to `this.uniformsBuffer` (device side)
         device.queue.writeBuffer( this.uniformsBuffer, 0, this.uniforms.buffer);
