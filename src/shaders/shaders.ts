@@ -23,6 +23,11 @@ import clusteringComputeRaw from './clustering.cs.wgsl?raw';
 
 // Note that these are declared in a somewhat roundabout way because otherwise minification will drop variables
 // that are unused in host side code.
+// cluster grid dimensions (tiles in X/Y, depth slices in Z)
+const clusterDimX = 16;
+const clusterDimY = 9;
+const clusterDimZ = 24;
+
 export const constants = {
     bindGroup_scene: 0,
     bindGroup_model: 1,
@@ -30,7 +35,17 @@ export const constants = {
 
     moveLightsWorkgroupSize: 128,
 
-    lightRadius: 2
+    lightRadius: 2,
+
+    clusterDimX: clusterDimX,
+    clusterDimY: clusterDimY,
+    clusterDimZ: clusterDimZ,
+    numClusters: clusterDimX * clusterDimY * clusterDimZ,
+    maxLightsPerCluster: 256,
+    clusteringWorkgroupSize: 128,
+
+    // Forward+ debug view: 0 = off, 1 = random color per cluster, 2 = lights-per-cluster heatmap
+    forwardPlusDebugMode: 0
 };
 
 // =================================
