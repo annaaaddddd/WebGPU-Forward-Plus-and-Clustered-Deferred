@@ -28,7 +28,6 @@ export class Lights {
     moveLightsComputeBindGroup: GPUBindGroup;
     moveLightsComputePipeline: GPUComputePipeline;
 
-    // TODO-2: add layouts, pipelines, textures, etc. needed for light clustering here
     clusterSetStorageBuffer : GPUBuffer;
 
     clusterLightsComputeBindGroupLayout: GPUBindGroupLayout;
@@ -98,7 +97,6 @@ export class Lights {
             }
         });
 
-        // TODO-2: initialize layouts, pipelines, textures, etc. needed for light clustering here
         this.clusterSetStorageBuffer = device.createBuffer({
             label: "clusters",
             size: shaders.constants.numClusters * (1 + shaders.constants.maxLightsPerCluster) * 4,
@@ -176,8 +174,6 @@ export class Lights {
     }
 
     doLightClustering(encoder: GPUCommandEncoder) {
-        // TODO-2: run the light clustering compute pass(es) here
-        // implementing clustering here allows for reusing the code in both Forward+ and Clustered Deferred
 
         const computePass = encoder.beginComputePass();
         computePass.setPipeline(this.clusterLightsComputePipeline);

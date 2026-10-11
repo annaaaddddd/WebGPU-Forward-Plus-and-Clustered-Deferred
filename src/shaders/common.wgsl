@@ -10,7 +10,6 @@ struct LightSet {
     lights: array<Light>
 }
 
-// TODO-2: you may want to create a ClusterSet struct similar to LightSet
 struct Cluster {
     numLights: u32,
     lightIndices: array<u32, ${maxLightsPerCluster}>
@@ -44,9 +43,9 @@ fn calculateLightContrib(light: Light, posWorld: vec3f, nor: vec3f) -> vec3f {
 }
 
 fn aabbLightIntersection(lightCenter: vec3f, aabbMin: vec3f, aabbMax: vec3f) -> bool {
-    let closetPoint = clamp(lightCenter, aabbMin, aabbMax);
+    let closestPoint = clamp(lightCenter, aabbMin, aabbMax);
 
-    let distanceToCenterSquared = dot(closetPoint - lightCenter, closetPoint - lightCenter);
+    let distanceToCenterSquared = dot(closestPoint - lightCenter, closestPoint - lightCenter);
     let lightRadiusSquared = f32(${lightRadius}) * f32(${lightRadius});
 
     return distanceToCenterSquared < lightRadiusSquared;

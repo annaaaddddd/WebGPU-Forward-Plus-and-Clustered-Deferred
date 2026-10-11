@@ -1,4 +1,3 @@
-// TODO-2: implement the Forward+ fragment shader
 
 // See naive.fs.wgsl for basic fragment shader setup; this shader should use light clusters instead of looping over all lights
 
