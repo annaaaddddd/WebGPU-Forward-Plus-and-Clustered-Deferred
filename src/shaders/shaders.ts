@@ -32,6 +32,7 @@ export const constants = {
     bindGroup_scene: 0,
     bindGroup_model: 1,
     bindGroup_material: 2,
+    bindGroup_gbuffer: 1,
 
     moveLightsWorkgroupSize: 128,
 
@@ -44,8 +45,8 @@ export const constants = {
     maxLightsPerCluster: 256,
     clusteringWorkgroupSize: 128,
 
-    // Forward+ debug view: 0 = off, 1 = random color per cluster, 2 = lights-per-cluster heatmap
-    forwardPlusDebugMode: 0
+    // cluster debug view (Forward+ and Clustered Deferred): 0 = off, 1 = random color per cluster, 2 = lights-per-cluster heatmap
+    clusterDebugMode: 0
 };
 
 // =================================

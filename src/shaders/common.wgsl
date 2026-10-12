@@ -50,3 +50,13 @@ fn aabbLightIntersection(lightCenter: vec3f, aabbMin: vec3f, aabbMax: vec3f) -> 
 
     return distanceToCenterSquared < lightRadiusSquared;
 }
+
+// pseudo-random color from an integer id
+fn hashColor(id: u32) -> vec3f {
+    let f = f32(id);
+    return vec3f(
+        fract(sin(f * 12.9898) * 43758.5453),
+        fract(sin(f * 78.233) * 24634.6345),
+        fract(sin(f * 39.346) * 31415.9265)
+    );
+}

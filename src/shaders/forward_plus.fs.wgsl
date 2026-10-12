@@ -55,11 +55,11 @@ fn main(in: FragmentInput) -> @location(0) vec4f
         totalLightContrib += calculateLightContrib(light, in.pos, normalize(in.nor));
     }
 
-    // debug views, controlled by forwardPlusDebugMode in shaders.ts
-    if (${forwardPlusDebugMode} == 1) {
+    // debug views, controlled by clusterDebugMode in shaders.ts
+    if (${clusterDebugMode} == 1) {
         return vec4f(hashColor(clusterIdx), 1);
     }
-    if (${forwardPlusDebugMode} == 2) {
+    if (${clusterDebugMode} == 2) {
         let numLights = (*cluster).numLights;
         if (numLights >= ${maxLightsPerCluster}u) {
             return vec4f(0, 0, 1, 1); // blue = cluster is full, lights are being dropped
@@ -71,12 +71,3 @@ fn main(in: FragmentInput) -> @location(0) vec4f
     return vec4(finalColor, 1);
 }
 
-// pseudo-random color from an integer id
-fn hashColor(id: u32) -> vec3f {
-    let f = f32(id);
-    return vec3f(
-        fract(sin(f * 12.9898) * 43758.5453),
-        fract(sin(f * 78.233) * 24634.6345),
-        fract(sin(f * 39.346) * 31415.9265)
-    );
-}
