@@ -42,7 +42,7 @@ export const constants = {
     clusterDimY: clusterDimY,
     clusterDimZ: clusterDimZ,
     numClusters: clusterDimX * clusterDimY * clusterDimZ,
-    maxLightsPerCluster: 256,
+    maxLightsPerCluster: 1024,
     clusteringWorkgroupSize: 128,
 
     // cluster debug view (Forward+ and Clustered Deferred): 0 = off, 1 = random color per cluster, 2 = lights-per-cluster heatmap
