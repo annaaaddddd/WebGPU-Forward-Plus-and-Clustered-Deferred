@@ -1,0 +1,13 @@
+numLights,cap,frames,intervalMs,clusters,nonEmptyClusters,fullClusters,fullClustersPeak,maxLights,maxLightsPeak,meanLightsNonEmpty,note
+2000,1024,10,0,3456,1930,0,,441,,130.7,consecutive frames (one instant)
+5000,1024,10,0,3456,1948,30,,1024,,308.5,snapshot A (10 consecutive frames)
+5000,1024,10,0,3456,1965,0,,803,,198.5,snapshot B (later page session)
+5000,2048,10,0,3456,1961,0,,816,,198.7,consecutive frames (one instant)
+5000,512,10,0,3456,1938,125,,512,,236.3,consecutive frames (one instant)
+5000,256,10,0,3456,1937,891,,256,,205.8,consecutive frames (one instant)
+5000,1024,20,500,3456,1946,0,57,827,1024,256.5,20 samples spread over 10 s
+5000,2048,20,500,3456,1948,0,0,842,1345,251.9,20 samples spread over 10 s
+5000,1024,20,500,3456,1946,0,52,824,1024,241.4,20 samples spread over 10 s (repeat)
+5000,256,20,500,3456,1946,663,1575,256,256,192.1,20 samples spread over 10 s
+5000,512,20,500,3456,1945,99,330,512,512,242.3,20 samples spread over 10 s
+2000,1024,20,500,3456,1941,0,0,344,539,102.6,20 samples spread over 10 s

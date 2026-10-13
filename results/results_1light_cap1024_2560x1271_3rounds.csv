@@ -1,0 +1,10 @@
+round,mode,numLights,canvasWidth,canvasHeight,maxLightsPerCluster,frames,mean_ms,median_ms
+1,naive,1,2560,1271,1024,200,3.516,3.500
+1,forward+,1,2560,1271,1024,200,3.410,3.400
+1,clustered deferred,1,2560,1271,1024,200,3.142,3.000
+2,naive,1,2560,1271,1024,200,3.014,2.900
+2,forward+,1,2560,1271,1024,200,4.277,3.400
+2,clustered deferred,1,2560,1271,1024,200,2.945,3.000
+3,naive,1,2560,1271,1024,200,3.148,3.000
+3,forward+,1,2560,1271,1024,200,4.472,5.000
+3,clustered deferred,1,2560,1271,1024,200,3.030,3.000

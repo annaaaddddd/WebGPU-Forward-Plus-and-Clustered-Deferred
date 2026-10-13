@@ -1,0 +1,10 @@
+round,mode,numLights,view,canvasWidth,canvasHeight,maxLightsPerCluster,frames,mean_ms,median_ms,gpu_clustering_ms,gpu_render_ms,gpu_gbuffer_ms,gpu_fullscreen_ms,gpu_total_ms
+1,naive,1,default,2560,1271,1024,200,3.243,3.200,,0.262,,,0.262
+1,forward+,1,default,2560,1271,1024,200,3.142,3.100,0.000,0.655,,,0.655
+1,clustered deferred,1,default,2560,1271,1024,200,3.580,3.000,0.000,,1.442,0.066,1.507
+2,naive,1,default,2560,1271,1024,200,3.397,3.000,,0.721,,,0.721
+2,forward+,1,default,2560,1271,1024,200,4.922,5.000,0.000,1.966,,,2.032
+2,clustered deferred,1,default,2560,1271,1024,200,3.322,3.000,0.000,,0.721,0.066,0.786
+3,naive,1,default,2560,1271,1024,200,2.997,3.000,,0.852,,,0.852
+3,forward+,1,default,2560,1271,1024,200,4.973,5.000,0.000,2.032,,,2.032
+3,clustered deferred,1,default,2560,1271,1024,200,3.188,3.000,0.000,,0.721,0.066,0.786
