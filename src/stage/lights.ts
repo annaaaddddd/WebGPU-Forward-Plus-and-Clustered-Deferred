@@ -1,5 +1,5 @@
 import { vec3 } from "wgpu-matrix";
-import { device } from "../renderer";
+import { device, gpuTimer } from "../renderer";
 
 import * as shaders from '../shaders/shaders';
 import { Camera } from "./camera";
@@ -100,7 +100,7 @@ export class Lights {
         this.clusterSetStorageBuffer = device.createBuffer({
             label: "clusters",
             size: shaders.constants.numClusters * (1 + shaders.constants.maxLightsPerCluster) * 4,
-            usage: GPUBufferUsage.STORAGE 
+            usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC // COPY_SRC for clusterStats()
         });
 
         this.clusterLightsComputeBindGroupLayout = device.createBindGroupLayout({
@@ -175,7 +175,10 @@ export class Lights {
 
     doLightClustering(encoder: GPUCommandEncoder) {
 
-        const computePass = encoder.beginComputePass();
+        const computePass = encoder.beginComputePass({
+            label: "light clustering pass",
+            timestampWrites: gpuTimer.pass("clustering")
+        });
         computePass.setPipeline(this.clusterLightsComputePipeline);
 
         computePass.setBindGroup(0, this.clusterLightsComputeBindGroup);

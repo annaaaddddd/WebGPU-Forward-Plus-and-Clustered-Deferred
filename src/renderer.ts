@@ -12,6 +12,85 @@ export var canvasTextureView: GPUTextureView;
 export var aspectRatio: number;
 export const fovYDegrees = 45;
 
+// set by benchmark.ts, gets the frame time and the gpu time of each pass for every frame
+export type PassTiming = { label: string, ms: number };
+export let frameTimeListener: ((ms: number, passes: PassTiming[]) => void) | undefined;
+export function setFrameTimeListener(listener: ((ms: number, passes: PassTiming[]) => void) | undefined) {
+    frameTimeListener = listener;
+}
+
+// per-pass gpu timing with timestamp queries, does nothing if the feature isn't available
+export const gpuTimer = {
+    enabled: false,
+    querySet: undefined as GPUQuerySet | undefined,
+    resolveBuffer: undefined as GPUBuffer | undefined,
+    stagingBuffer: undefined as GPUBuffer | undefined,
+    labels: [] as string[],
+    mapping: false,
+    maxPasses: 8,
+
+    init() {
+        this.enabled = device.features.has('timestamp-query');
+        if (!this.enabled) {
+            console.log("timestamp-query not available, per-pass GPU timings are disabled");
+            return;
+        }
+        const size = 2 * this.maxPasses * 8; // two u64 timestamps per pass
+        this.querySet = device.createQuerySet({ label: "pass timestamps", type: 'timestamp', count: 2 * this.maxPasses });
+        this.resolveBuffer = device.createBuffer({
+            label: "pass timestamps resolve",
+            size: size,
+            usage: GPUBufferUsage.QUERY_RESOLVE | GPUBufferUsage.COPY_SRC
+        });
+        this.stagingBuffer = device.createBuffer({
+            label: "pass timestamps staging",
+            size: size,
+            usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST
+        });
+    },
+
+    // called once per frame before draw()
+    beginFrame() {
+        this.labels = [];
+    },
+
+    // use as the `timestampWrites` of a render or compute pass descriptor
+    pass(label: string): GPURenderPassTimestampWrites | undefined {
+        if (!this.enabled || this.mapping || this.labels.length >= this.maxPasses) {
+            return undefined;
+        }
+        const i = this.labels.length;
+        this.labels.push(label);
+        return { querySet: this.querySet!, beginningOfPassWriteIndex: 2 * i, endOfPassWriteIndex: 2 * i + 1 };
+    },
+
+    // call right before encoder.finish()
+    resolve(encoder: GPUCommandEncoder) {
+        if (!this.enabled || this.mapping || this.labels.length === 0) {
+            return;
+        }
+        const n = 2 * this.labels.length;
+        encoder.resolveQuerySet(this.querySet!, 0, n, this.resolveBuffer!, 0);
+        encoder.copyBufferToBuffer(this.resolveBuffer!, 0, this.stagingBuffer!, 0, n * 8);
+    },
+
+    // call after the frame is done, returns the duration of each pass in ms
+    async read(): Promise<PassTiming[]> {
+        if (!this.enabled || this.mapping || this.labels.length === 0) {
+            return [];
+        }
+        const labels = this.labels;
+        const bytes = 2 * labels.length * 8;
+        this.mapping = true;
+        await this.stagingBuffer!.mapAsync(GPUMapMode.READ, 0, bytes);
+        const t = new BigUint64Array(this.stagingBuffer!.getMappedRange(0, bytes));
+        const result = labels.map((label, i) => ({ label, ms: Number(t[2 * i + 1] - t[2 * i]) / 1e6 }));
+        this.stagingBuffer!.unmap();
+        this.mapping = false;
+        return result;
+    }
+};
+
 export var modelBindGroupLayout: GPUBindGroupLayout;
 export var materialBindGroupLayout: GPUBindGroupLayout;
 
@@ -41,7 +120,9 @@ export async function initWebGPU() {
         throw new Error("no appropriate GPUAdapter found");
     }
 
-    device = await adapter.requestDevice();
+    // timestamp-query is only needed for the per-pass timings in the benchmark
+    const requiredFeatures: GPUFeatureName[] = adapter.features.has('timestamp-query') ? ['timestamp-query'] : [];
+    device = await adapter.requestDevice({ requiredFeatures });
 
     context = canvas.getContext("webgpu")!;
     canvasFormat = navigator.gpu.getPreferredCanvasFormat();
@@ -51,6 +132,8 @@ export async function initWebGPU() {
     });
 
     console.log("WebGPU init successsful");
+
+    gpuTimer.init();
 
     modelBindGroupLayout = device.createBindGroupLayout({
         label: "model bind group layout",
@@ -110,6 +193,7 @@ export abstract class Renderer {
 
     private prevTime: number = 0;
     private frameRequestId: number;
+    private stopped = false;
 
     constructor(stage: Stage) {
         this.scene = stage.scene;
@@ -121,6 +205,7 @@ export abstract class Renderer {
     }
 
     stop(): void {
+        this.stopped = true;
         cancelAnimationFrame(this.frameRequestId);
     }
 
@@ -136,6 +221,13 @@ export abstract class Renderer {
         this.camera.onFrame(deltaTime);
         this.lights.onFrame(time);
 
+        gpuTimer.beginFrame();
+
+        if (frameTimeListener) {
+            this.timedFrame(time);
+            return;
+        }
+
         this.stats.begin();
 
         this.draw();
@@ -144,5 +236,23 @@ export abstract class Renderer {
 
         this.prevTime = time;
         this.frameRequestId = requestAnimationFrame((t) => this.onFrame(t));
+    }
+
+    // benchmark path: one frame in flight, timed from submit until the gpu is done
+    private async timedFrame(time: number) {
+        // let the light movement compute pass finish first so it is not included in the measurement
+        await device.queue.onSubmittedWorkDone();
+
+        const start = performance.now();
+        this.draw();
+        await device.queue.onSubmittedWorkDone();
+        const ms = performance.now() - start;
+        const passes = await gpuTimer.read();
+        frameTimeListener?.(ms, passes);
+
+        this.prevTime = time;
+        if (!this.stopped) {
+            this.frameRequestId = requestAnimationFrame((t) => this.onFrame(t));
+        }
     }
 }

@@ -238,6 +238,7 @@ export class ClusteredDeferredRenderer extends renderer.Renderer {
 
         const gBufferPass = encoder.beginRenderPass({
             label: "deferred g buffer pass",
+            timestampWrites: renderer.gpuTimer.pass("gbuffer"),
             colorAttachments: [
                 {
                     view: this.positionTextureView,
@@ -281,6 +282,7 @@ export class ClusteredDeferredRenderer extends renderer.Renderer {
 
         const fullscreenPass = encoder.beginRenderPass({
             label: "deferred full screeen pass",
+            timestampWrites: renderer.gpuTimer.pass("fullscreen"),
             colorAttachments: [
                 {
                     view: canvasTextureView,
@@ -297,6 +299,7 @@ export class ClusteredDeferredRenderer extends renderer.Renderer {
 
         fullscreenPass.end();
 
+        renderer.gpuTimer.resolve(encoder);
         renderer.device.queue.submit([encoder.finish()]);
     }
 }

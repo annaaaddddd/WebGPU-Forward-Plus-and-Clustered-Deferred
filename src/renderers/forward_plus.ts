@@ -104,6 +104,7 @@ export class ForwardPlusRenderer extends renderer.Renderer {
 
         const renderPass = encoder.beginRenderPass({
             label: "forward plus render pass",
+            timestampWrites: renderer.gpuTimer.pass("render"),
             colorAttachments: [
                 {
                     view: canvasTextureView,
@@ -135,6 +136,7 @@ export class ForwardPlusRenderer extends renderer.Renderer {
 
         renderPass.end();
 
+        renderer.gpuTimer.resolve(encoder);
         renderer.device.queue.submit([encoder.finish()]);
     }
 }

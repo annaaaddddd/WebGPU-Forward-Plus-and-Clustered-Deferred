@@ -121,6 +121,22 @@ export class Camera {
         }
     }
 
+    // used by the benchmark to put the camera at a reproducible pose
+    setPose(pos: [number, number, number], yaw: number, pitch: number) {
+        this.cameraPos = vec3.create(pos[0], pos[1], pos[2]);
+        this.yaw = yaw;
+        this.pitch = pitch;
+        this.rotateCamera(0, 0);
+    }
+
+    getPose() {
+        return {
+            pos: [this.cameraPos[0], this.cameraPos[1], this.cameraPos[2]] as [number, number, number],
+            yaw: this.yaw,
+            pitch: this.pitch
+        };
+    }
+
     private processInput(deltaTime: number) {
         let moveDir = vec3.create(0, 0, 0);
         if (this.keys['w']) {

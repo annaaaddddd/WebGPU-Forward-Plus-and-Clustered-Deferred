@@ -10,6 +10,7 @@ import { setupLoaders, Scene } from './stage/scene';
 import { Lights } from './stage/lights';
 import { Camera } from './stage/camera';
 import { Stage } from './stage/stage';
+import { setupBenchmark } from './benchmark';
 
 await initWebGPU();
 setupLoaders();
@@ -54,3 +55,5 @@ let renderModeController = gui.add({ mode: renderModes.naive }, 'mode', renderMo
 renderModeController.onChange(setRenderer);
 
 setRenderer(renderModeController.getValue());
+
+setupBenchmark(lights, camera, setRenderer);
