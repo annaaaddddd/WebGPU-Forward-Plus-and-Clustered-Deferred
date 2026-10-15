@@ -51,8 +51,14 @@ export const constants = {
 
 // =================================
 
+// replaces every ${expr} in a shader with the value of expr, evaluated with all constants in scope.
+// The constants are passed in through Object.keys/values on purpose: a static `constants.x` access
+// lets the production bundler strip constants that only shaders use (lightRadius was dropped that way).
+const constantNames = Object.keys(constants);
+const constantValues = Object.values(constants);
 function evalShaderRaw(raw: string) {
-    return eval('`' + raw.replaceAll('${', '${constants.') + '`');
+    return raw.replace(/\$\{([^}]*)\}/g, (_, expr: string) =>
+        String(new Function(...constantNames, `return (${expr});`)(...constantValues)));
 }
 
 const commonSrc: string = evalShaderRaw(commonRaw);
