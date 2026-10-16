@@ -15,7 +15,7 @@ import { constants } from './shaders/shaders';
 type Sample = { ms: number, passes: PassTiming[] };
 
 // one csv column per pass label
-const PASS_COLUMNS = ['clustering', 'prepass', 'render', 'gbuffer', 'fullscreen'];
+const PASS_COLUMNS = ['clustering', 'prepass', 'mark', 'render', 'gbuffer', 'fullscreen'];
 
 export function setupBenchmark(lights: Lights, camera: Camera, setRenderer: (mode: string) => void) {
     let sink: ((s: Sample) => void) | undefined;
@@ -51,12 +51,18 @@ export function setupBenchmark(lights: Lights, camera: Camera, setRenderer: (mod
 
     (window as any).benchmark = async ({
         lightCounts = [500, 1000, 2000, 5000],
-        modes = ['naive', 'forward+', 'forward+ prepass', 'clustered deferred'],
+        modes = ['naive', 'forward+', 'forward+ prepass', 'forward+ prepass cull', 'clustered deferred', 'clustered deferred cull'],
         rounds = 3,
         frames = 200,
         warmup = 30,
         view = 'default',
-        camera: pose = undefined as { pos: [number, number, number], yaw: number, pitch: number } | undefined
+        camera: pose = undefined as { pos: [number, number, number], yaw: number, pitch: number } | undefined,
+        // warm: before every configuration, render naive at 5000 lights for a few frames (about 2 s of
+        // fully loaded GPU) so the clocks are high when the measured frames start; see the clock notes in the README
+        warm = false,
+        warmFrames = 6,
+        // print a wall-clock stamp per configuration, to line the run up with an nvidia-smi log
+        logTimes = false
     } = {}) => {
         // debug views skip the lighting loop, which makes the timings meaningless
         if (constants.clusterDebugMode !== 0) {
@@ -67,30 +73,39 @@ export function setupBenchmark(lights: Lights, camera: Camera, setRenderer: (mod
             camera.setPose(pose.pos, pose.yaw, pose.pitch);
         }
         const p = camera.getPose();
-        console.log(`benchmark: canvas ${canvas.width}x${canvas.height}, maxLightsPerCluster ${constants.maxLightsPerCluster}, ` +
+        console.log(`benchmark: canvas ${canvas.width}x${canvas.height}, clusters ${constants.clusterDimX}x${constants.clusterDimY}x${constants.clusterDimZ}, maxLightsPerCluster ${constants.maxLightsPerCluster}, ` +
             `view "${view}" (pos [${p.pos.map(x => x.toFixed(2)).join(', ')}], yaw ${p.yaw.toFixed(1)}, pitch ${p.pitch.toFixed(1)})`);
 
         setFrameTimeListener((ms, passes) => sink?.({ ms, passes }));
 
-        const rows = ['round,mode,numLights,view,canvasWidth,canvasHeight,maxLightsPerCluster,frames,mean_ms,median_ms,'
+        const rows = ['round,mode,numLights,view,warm,canvasWidth,canvasHeight,clusterDimX,clusterDimY,clusterDimZ,maxLightsPerCluster,frames,mean_ms,median_ms,'
             + PASS_COLUMNS.map(c => `gpu_${c}_ms`).join(',') + ',gpu_total_ms'];
         const perConfig = new Map<string, { mode: string, count: number, medians: number[] }>();
 
         for (let round = 1; round <= rounds; round++) {
             for (const count of lightCounts) {
                 for (const mode of modes) {
+                    if (warm) {
+                        // heavy load first: naive at 5000 lights takes about 350 ms per frame
+                        lights.numLights = Lights.maxNumLights;
+                        lights.updateLightSetUniformNumLights();
+                        setRenderer('naive');
+                        await sample(warmFrames);
+                    }
+
                     lights.numLights = count;
                     lights.updateLightSetUniformNumLights();
                     setRenderer(mode);
-                    // wall-clock stamp so the run can be lined up with external logs (e.g. nvidia-smi -l 1)
-                    // console.log(`benchmark: ${new Date().toTimeString().slice(0, 8)} round ${round} ${mode} ${count}`);
+                    if (logTimes) {
+                        console.log(`benchmark: ${new Date().toTimeString().slice(0, 8)} round ${round} ${mode} ${count}`);
+                    }
 
                     await sample(warmup);
                     const samples = await sample(frames);
                     const times = samples.map(s => s.ms);
 
                     const m = median(times);
-                    rows.push(`${round},${mode},${count},${view},${canvas.width},${canvas.height},${constants.maxLightsPerCluster},${frames},`
+                    rows.push(`${round},${mode},${count},${view},${warm ? 1 : 0},${canvas.width},${canvas.height},${constants.clusterDimX},${constants.clusterDimY},${constants.clusterDimZ},${constants.maxLightsPerCluster},${frames},`
                         + `${mean(times).toFixed(3)},${m.toFixed(3)},`
                         + PASS_COLUMNS.map(c => passMedian(samples, c)).join(',') + `,${gpuTotalMedian(samples)}`);
 
@@ -120,12 +135,14 @@ export function setupBenchmark(lights: Lights, camera: Camera, setRenderer: (mod
     };
 
     // reads back the cluster buffer and reports how full the clusters are, overall and per slice
-    // samples are spread out since the lights keep moving (uses forward+, naive doesn't cluster)
+    // samples are spread out since the lights keep moving. `mode` picks the renderer (naive doesn't
+    // cluster); in a cull mode the active-cluster flags are read back too and reported as activeClusters
     (window as any).clusterStats = async ({
         numLights = lights.numLights,
         frames = 10,
         warmup = 30,
-        intervalMs = 500
+        intervalMs = 500,
+        mode = 'forward+'
     } = {}) => {
         const cap = constants.maxLightsPerCluster;
         const numClusters = constants.numClusters;
@@ -138,14 +155,20 @@ export function setupBenchmark(lights: Lights, camera: Camera, setRenderer: (mod
             size: byteLength,
             usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST
         });
+        const flagsStaging = device.createBuffer({
+            label: "active cluster flags readback",
+            size: numClusters * 4,
+            usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST
+        });
 
         lights.numLights = numLights;
         lights.updateLightSetUniformNumLights();
-        setRenderer('forward+');
+        setRenderer(mode);
         setFrameTimeListener((ms, passes) => sink?.({ ms, passes }));
         await sample(warmup);
 
-        type FrameStats = { nonEmpty: number, full: number, max: number, meanNonEmpty: number, sliceMax: number[], sliceFull: number[] };
+        type FrameStats = { nonEmpty: number, full: number, max: number, meanNonEmpty: number, active: number,
+                            sliceMax: number[], sliceFull: number[], sliceActive: number[] };
         const perFrame: FrameStats[] = [];
         let lastSample = -Infinity;
         for (let f = 0; f < frames; f++) {
@@ -159,22 +182,26 @@ export function setupBenchmark(lights: Lights, camera: Camera, setRenderer: (mod
                     sink = undefined;
                     const encoder = device.createCommandEncoder();
                     encoder.copyBufferToBuffer(lights.clusterSetStorageBuffer, 0, staging, 0, byteLength);
+                    encoder.copyBufferToBuffer(lights.clusterActiveBuffer, 0, flagsStaging, 0, numClusters * 4);
                     device.queue.submit([encoder.finish()]);
                     resolve();
                 };
             });
-            await staging.mapAsync(GPUMapMode.READ);
+            await Promise.all([staging.mapAsync(GPUMapMode.READ), flagsStaging.mapAsync(GPUMapMode.READ)]);
             const data = new Uint32Array(staging.getMappedRange());
+            const flags = new Uint32Array(flagsStaging.getMappedRange());
 
             const stats: FrameStats = {
-                nonEmpty: 0, full: 0, max: 0, meanNonEmpty: 0,
+                nonEmpty: 0, full: 0, max: 0, meanNonEmpty: 0, active: 0,
                 sliceMax: new Array(constants.clusterDimZ).fill(0),
-                sliceFull: new Array(constants.clusterDimZ).fill(0)
+                sliceFull: new Array(constants.clusterDimZ).fill(0),
+                sliceActive: new Array(constants.clusterDimZ).fill(0)
             };
             let sum = 0;
             for (let c = 0; c < numClusters; c++) {
                 const n = data[c * stride];
                 const z = Math.floor(c / sliceSize);
+                if (flags[c] != 0) { stats.active++; stats.sliceActive[z]++; }
                 if (n > 0) { stats.nonEmpty++; sum += n; }
                 if (n >= cap) { stats.full++; stats.sliceFull[z]++; }
                 if (n > stats.max) { stats.max = n; }
@@ -182,20 +209,24 @@ export function setupBenchmark(lights: Lights, camera: Camera, setRenderer: (mod
             }
             stats.meanNonEmpty = stats.nonEmpty > 0 ? sum / stats.nonEmpty : 0;
             staging.unmap();
+            flagsStaging.unmap();
             perFrame.push(stats);
         }
 
         setFrameTimeListener(undefined);
         staging.destroy();
+        flagsStaging.destroy();
 
         const med = (pick: (s: FrameStats) => number) => median(perFrame.map(pick));
         const peak = (pick: (s: FrameStats) => number) => Math.max(...perFrame.map(pick));
         const summary = {
+            mode,
             numLights,
             cap,
             frames,
             intervalMs,
             clusters: numClusters,
+            activeClusters: med(s => s.active), // 0 unless the mode culls
             nonEmptyClusters: med(s => s.nonEmpty),
             fullClusters: med(s => s.full),
             fullClustersPeak: peak(s => s.full),
@@ -210,13 +241,15 @@ export function setupBenchmark(lights: Lights, camera: Camera, setRenderer: (mod
             slice: z,
             depthNear: +sliceDepth(z).toFixed(2),
             depthFar: +sliceDepth(z + 1).toFixed(2),
+            activeClusters: med(s => s.sliceActive[z]),
             maxLights: med(s => s.sliceMax[z]),
             fullClusters: med(s => s.sliceFull[z])
         })));
 
-        console.log('numLights,cap,frames,intervalMs,clusters,nonEmptyClusters,fullClusters,fullClustersPeak,maxLights,maxLightsPeak,meanLightsNonEmpty\n'
-            + [summary.numLights, summary.cap, summary.frames, summary.intervalMs, summary.clusters, summary.nonEmptyClusters,
-               summary.fullClusters, summary.fullClustersPeak, summary.maxLights, summary.maxLightsPeak, summary.meanLightsNonEmpty].join(','));
+        console.log('mode,numLights,cap,frames,intervalMs,clusters,activeClusters,nonEmptyClusters,fullClusters,fullClustersPeak,maxLights,maxLightsPeak,meanLightsNonEmpty\n'
+            + [summary.mode, summary.numLights, summary.cap, summary.frames, summary.intervalMs, summary.clusters, summary.activeClusters,
+               summary.nonEmptyClusters, summary.fullClusters, summary.fullClustersPeak, summary.maxLights, summary.maxLightsPeak,
+               summary.meanLightsNonEmpty].join(','));
         return summary;
     };
 }
