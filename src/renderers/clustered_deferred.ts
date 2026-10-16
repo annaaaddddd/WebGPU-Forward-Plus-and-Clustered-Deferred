@@ -3,9 +3,6 @@ import * as shaders from '../shaders/shaders';
 import { Stage } from '../stage/stage';
 
 export class ClusteredDeferredRenderer extends renderer.Renderer {
-    // TODO-3: add layouts, pipelines, textures, etc. needed for Forward+ here
-    // you may need extra uniforms such as the camera view matrix and the canvas resolution
-
     // g buffer pass
     gBufferBindGroupLayout: GPUBindGroupLayout;
     gBufferSceneBindGroup: GPUBindGroup;
@@ -234,11 +231,6 @@ export class ClusteredDeferredRenderer extends renderer.Renderer {
     }
 
     override draw() {
-        // TODO-3: run the Forward+ rendering pass:
-        // - run the clustering compute shader
-        // - run the G-buffer pass, outputting position, albedo, and normals
-        // - run the fullscreen pass, which reads from the G-buffer and performs lighting calculations
-
         const encoder = renderer.device.createCommandEncoder();
         const canvasTextureView = renderer.context.getCurrentTexture().createView();
 

@@ -1,6 +1,4 @@
-// TODO-3: implement the Clustered Deferred fullscreen fragment shader
-
-// Similar to the Forward+ fragment shader, but with vertex information coming from the G-buffer instead.
+// the Clustered Deferred fullscreen fragment shader
 
 @group(${bindGroup_scene}) @binding(0) var<uniform> cameraUniforms: CameraUniforms;
 @group(${bindGroup_scene}) @binding(1) var<storage, read> lightSet: LightSet;
