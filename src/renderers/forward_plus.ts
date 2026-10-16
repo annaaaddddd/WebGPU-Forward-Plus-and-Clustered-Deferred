@@ -15,9 +15,16 @@ export class ForwardPlusRenderer extends renderer.Renderer {
     // that depth, so hidden surfaces don't run the lighting loop
     prepassPipeline: GPURenderPipeline | undefined;
 
+    // options.cullClusters: after the prepass, mark the clusters behind visible pixels and only
+    // cluster lights for those (needs the prepass depth, so it requires options.prepass)
+    markClustersBindGroup: GPUBindGroup | undefined;
+
     constructor(stage: Stage, options: renderer.RendererOptions = {}) {
         super(stage, options);
         const prepass = options.prepass ?? false;
+        if (options.cullClusters && !prepass) {
+            throw new Error("cullClusters needs the depth prepass");
+        }
 
         this.sceneUniformsBindGroupLayout = renderer.device.createBindGroupLayout({
             label: "scene uniforms bind group layout",
@@ -66,6 +73,10 @@ export class ForwardPlusRenderer extends renderer.Renderer {
             usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING
         });
         this.depthTextureView = this.depthTexture.createView();
+
+        if (options.cullClusters) {
+            this.markClustersBindGroup = this.lights.createMarkClustersBindGroup(this.depthTextureView);
+        }
 
         const pipelineLayout = renderer.device.createPipelineLayout({
             label: "forward plus pipeline layout",
@@ -154,7 +165,9 @@ export class ForwardPlusRenderer extends renderer.Renderer {
         const encoder = renderer.device.createCommandEncoder();
         const canvasTextureView = renderer.context.getCurrentTexture().createView();
 
-        this.lights.doLightClustering(encoder);
+        if (!this.options.cullClusters) {
+            this.lights.doLightClustering(encoder);
+        }
 
         if (this.options.prepass) {
             const prepass = encoder.beginRenderPass({
@@ -171,6 +184,11 @@ export class ForwardPlusRenderer extends renderer.Renderer {
             prepass.setPipeline(this.prepassPipeline!);
             this.drawScene(prepass);
             prepass.end();
+        }
+
+        if (this.options.cullClusters) {
+            this.lights.markActiveClusters(encoder, this.markClustersBindGroup!);
+            this.lights.doLightClustering(encoder, true);
         }
 
         const renderPass = encoder.beginRenderPass({

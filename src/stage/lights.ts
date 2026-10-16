@@ -1,5 +1,5 @@
 import { vec3 } from "wgpu-matrix";
-import { device, gpuTimer } from "../renderer";
+import { device, canvas, gpuTimer } from "../renderer";
 
 import * as shaders from '../shaders/shaders';
 import { Camera } from "./camera";
@@ -33,6 +33,12 @@ export class Lights {
     clusterLightsComputeBindGroupLayout: GPUBindGroupLayout;
     clusterLightsComputeBindGroup: GPUBindGroup;
     clusterLightsComputePipeline: GPUComputePipeline;
+    clusterLightsCullComputePipeline: GPUComputePipeline; // same shader, cullClusters = true
+
+    // depth-based cluster culling: one u32 flag per cluster, set by the mark pass, cleared every frame
+    clusterActiveBuffer: GPUBuffer;
+    markClustersBindGroupLayout: GPUBindGroupLayout;
+    markClustersComputePipeline: GPUComputePipeline;
 
     constructor(camera: Camera) {
         this.camera = camera;
@@ -103,6 +109,12 @@ export class Lights {
             usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC // COPY_SRC for clusterStats()
         });
 
+        this.clusterActiveBuffer = device.createBuffer({
+            label: "active clusters",
+            size: shaders.constants.numClusters * 4,
+            usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC // COPY_DST: clearBuffer, COPY_SRC: clusterStats()
+        });
+
         this.clusterLightsComputeBindGroupLayout = device.createBindGroupLayout({
             label: "cluster lights compute bind group layout",
             entries: [
@@ -120,6 +132,11 @@ export class Lights {
                     binding: 2,
                     visibility: GPUShaderStage.COMPUTE,
                     buffer: { type: "uniform"}
+                },
+                { // active cluster flags
+                    binding: 3,
+                    visibility: GPUShaderStage.COMPUTE,
+                    buffer: { type: "read-only-storage" }
                 }
             ]
         });
@@ -139,24 +156,106 @@ export class Lights {
                 {
                     binding: 2,
                     resource: { buffer: camera.uniformsBuffer }
+                },
+                {
+                    binding: 3,
+                    resource: { buffer: this.clusterActiveBuffer }
                 }
             ]
         });
 
+        const clusteringModule = device.createShaderModule({
+            label: "cluster lights compute shader",
+            code: shaders.clusteringComputeSrc
+        });
+        const clusteringLayout = device.createPipelineLayout({
+            label: "cluster lights compute pipeline layout",
+            bindGroupLayouts: [ this.clusterLightsComputeBindGroupLayout ]
+        });
+
         this.clusterLightsComputePipeline = device.createComputePipeline({
             label: "cluster lights compute pipeline",
+            layout: clusteringLayout,
+            compute: {
+                module: clusteringModule,
+                entryPoint: "main"
+            }
+        });
+
+        // the culled variant sets the `override cullClusters` constant of the same shader
+        this.clusterLightsCullComputePipeline = device.createComputePipeline({
+            label: "cluster lights compute pipeline (culled)",
+            layout: clusteringLayout,
+            compute: {
+                module: clusteringModule,
+                entryPoint: "main",
+                constants: { cullClusters: 1 }
+            }
+        });
+
+        this.markClustersBindGroupLayout = device.createBindGroupLayout({
+            label: "mark clusters bind group layout",
+            entries: [
+                { // camera uniform
+                    binding: 0,
+                    visibility: GPUShaderStage.COMPUTE,
+                    buffer: { type: "uniform" }
+                },
+                { // depth buffer of the prepass / G-buffer pass
+                    binding: 1,
+                    visibility: GPUShaderStage.COMPUTE,
+                    texture: { sampleType: "depth" }
+                },
+                { // active cluster flags
+                    binding: 2,
+                    visibility: GPUShaderStage.COMPUTE,
+                    buffer: { type: "storage" }
+                }
+            ]
+        });
+
+        this.markClustersComputePipeline = device.createComputePipeline({
+            label: "mark clusters compute pipeline",
             layout: device.createPipelineLayout({
-                label: "cluster lights compute pipeline layout",
-                bindGroupLayouts: [ this.clusterLightsComputeBindGroupLayout ]
+                label: "mark clusters compute pipeline layout",
+                bindGroupLayouts: [ this.markClustersBindGroupLayout ]
             }),
             compute: {
                 module: device.createShaderModule({
-                    label: "cluster lights compute shader",
-                    code: shaders.clusteringComputeSrc
+                    label: "mark clusters compute shader",
+                    code: shaders.markClustersComputeSrc
                 }),
                 entryPoint: "main"
             }
         });
+    }
+
+    // the depth texture belongs to the renderer, so each renderer that culls makes its own bind group once
+    createMarkClustersBindGroup(depthTextureView: GPUTextureView): GPUBindGroup {
+        return device.createBindGroup({
+            label: "mark clusters bind group",
+            layout: this.markClustersBindGroupLayout,
+            entries: [
+                { binding: 0, resource: { buffer: this.camera.uniformsBuffer } },
+                { binding: 1, resource: depthTextureView },
+                { binding: 2, resource: { buffer: this.clusterActiveBuffer } }
+            ]
+        });
+    }
+
+    // clears last frame's flags, then marks the clusters behind every pixel of the depth buffer.
+    // Must run after the pass that wrote the depth and before doLightClustering(encoder, true).
+    markActiveClusters(encoder: GPUCommandEncoder, markBindGroup: GPUBindGroup) {
+        encoder.clearBuffer(this.clusterActiveBuffer);
+
+        const computePass = encoder.beginComputePass({
+            label: "mark active clusters pass",
+            timestampWrites: gpuTimer.pass("mark")
+        });
+        computePass.setPipeline(this.markClustersComputePipeline);
+        computePass.setBindGroup(0, markBindGroup);
+        computePass.dispatchWorkgroups(Math.ceil(canvas.width / 16), Math.ceil(canvas.height / 16));
+        computePass.end();
     }
 
     private populateLightsBuffer() {
@@ -173,13 +272,14 @@ export class Lights {
         device.queue.writeBuffer(this.lightSetStorageBuffer, 0, new Uint32Array([this.numLights]));
     }
 
-    doLightClustering(encoder: GPUCommandEncoder) {
+    // cull = true skips the clusters that markActiveClusters() left unmarked
+    doLightClustering(encoder: GPUCommandEncoder, cull = false) {
 
         const computePass = encoder.beginComputePass({
             label: "light clustering pass",
             timestampWrites: gpuTimer.pass("clustering")
         });
-        computePass.setPipeline(this.clusterLightsComputePipeline);
+        computePass.setPipeline(cull ? this.clusterLightsCullComputePipeline : this.clusterLightsComputePipeline);
 
         computePass.setBindGroup(0, this.clusterLightsComputeBindGroup);
 

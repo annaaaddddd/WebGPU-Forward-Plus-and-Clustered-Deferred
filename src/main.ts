@@ -47,13 +47,26 @@ function setRenderer(mode: string) {
         case renderModes.forwardPlusPrepass:
             renderer = new ForwardPlusRenderer(stage, { prepass: true });
             break;
+        case renderModes.forwardPlusPrepassCull:
+            renderer = new ForwardPlusRenderer(stage, { prepass: true, cullClusters: true });
+            break;
         case renderModes.clusteredDeferred:
             renderer = new ClusteredDeferredRenderer(stage);
+            break;
+        case renderModes.clusteredDeferredCull:
+            renderer = new ClusteredDeferredRenderer(stage, { cullClusters: true });
             break;
     }
 }
 
-const renderModes = { naive: 'naive', forwardPlus: 'forward+', forwardPlusPrepass: 'forward+ prepass', clusteredDeferred: 'clustered deferred' };
+const renderModes = {
+    naive: 'naive',
+    forwardPlus: 'forward+',
+    forwardPlusPrepass: 'forward+ prepass',
+    forwardPlusPrepassCull: 'forward+ prepass cull',
+    clusteredDeferred: 'clustered deferred',
+    clusteredDeferredCull: 'clustered deferred cull'
+};
 let renderModeController = gui.add({ mode: renderModes.naive }, 'mode', renderModes);
 renderModeController.onChange(setRenderer);
 

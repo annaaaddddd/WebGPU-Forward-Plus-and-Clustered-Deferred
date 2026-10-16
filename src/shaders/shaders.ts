@@ -16,6 +16,7 @@ import clusteredDeferredFullscreenFragRaw from './clustered_deferred_fullscreen.
 
 import moveLightsComputeRaw from './move_lights.cs.wgsl?raw';
 import clusteringComputeRaw from './clustering.cs.wgsl?raw';
+import markClustersComputeRaw from './mark_clusters.cs.wgsl?raw';
 
 // CONSTANTS (for use in shaders)
 // =================================
@@ -80,3 +81,4 @@ export const clusteredDeferredFullscreenFragSrc: string = processShaderRaw(clust
 
 export const moveLightsComputeSrc: string = processShaderRaw(moveLightsComputeRaw);
 export const clusteringComputeSrc: string = processShaderRaw(clusteringComputeRaw);
+export const markClustersComputeSrc: string = processShaderRaw(markClustersComputeRaw);

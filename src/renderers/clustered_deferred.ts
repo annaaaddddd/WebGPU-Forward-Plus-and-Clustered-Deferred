@@ -30,8 +30,12 @@ export class ClusteredDeferredRenderer extends renderer.Renderer {
 
     fullscreenPipeline: GPURenderPipeline;
 
-    constructor(stage: Stage) {
-        super(stage);
+    // options.cullClusters: mark the clusters behind the G-buffer's visible pixels and only cluster
+    // lights for those; the G-buffer pass already provides the depth, so no extra geometry pass
+    markClustersBindGroup: GPUBindGroup | undefined;
+
+    constructor(stage: Stage, options: renderer.RendererOptions = {}) {
+        super(stage, options);
 
         // initialize layouts, pipelines, textures, etc. needed for g buffer pass here
         this.gBufferBindGroupLayout = renderer.device.createBindGroupLayout({
@@ -58,9 +62,13 @@ export class ClusteredDeferredRenderer extends renderer.Renderer {
         this.depthTexture = renderer.device.createTexture({
             size: [renderer.canvas.width, renderer.canvas.height],
             format: "depth24plus",
-            usage: GPUTextureUsage.RENDER_ATTACHMENT
+            usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING // read by the mark pass
         });
         this.depthTextureView = this.depthTexture.createView();
+
+        if (this.options.cullClusters) {
+            this.markClustersBindGroup = this.lights.createMarkClustersBindGroup(this.depthTextureView);
+        }
 
         this.positionTexture = renderer.device.createTexture({
             size: [renderer.canvas.width, renderer.canvas.height],
@@ -234,7 +242,9 @@ export class ClusteredDeferredRenderer extends renderer.Renderer {
         const encoder = renderer.device.createCommandEncoder();
         const canvasTextureView = renderer.context.getCurrentTexture().createView();
 
-        this.lights.doLightClustering(encoder);
+        if (!this.options.cullClusters) {
+            this.lights.doLightClustering(encoder);
+        }
 
         const gBufferPass = encoder.beginRenderPass({
             label: "deferred g buffer pass",
@@ -279,6 +289,11 @@ export class ClusteredDeferredRenderer extends renderer.Renderer {
         });
 
         gBufferPass.end();
+
+        if (this.options.cullClusters) {
+            this.lights.markActiveClusters(encoder, this.markClustersBindGroup!);
+            this.lights.doLightClustering(encoder, true);
+        }
 
         const fullscreenPass = encoder.beginRenderPass({
             label: "deferred full screeen pass",

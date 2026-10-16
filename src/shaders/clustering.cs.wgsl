@@ -24,6 +24,12 @@
 @group(${bindGroup_scene}) @binding(0) var<storage> lightSet: LightSet;
 @group(${bindGroup_scene}) @binding(1) var<storage, read_write> clusterSet: ClusterSet;
 @group(${bindGroup_scene}) @binding(2) var<uniform> cameraUniforms: CameraUniforms;
+// flags written by mark_clusters.cs.wgsl; only read when cullClusters is set on the pipeline
+@group(${bindGroup_scene}) @binding(3) var<storage> activeClusters: array<u32>;
+
+// pipeline-overridable constant: the same shader is compiled once with culling off and once with it on
+// (see the `constants` of the two compute pipelines in lights.ts)
+override cullClusters: bool = false;
 
 @compute 
 @workgroup_size(${clusteringWorkgroupSize})
@@ -32,6 +38,13 @@ fn main(@builtin(global_invocation_id) globalIdx: vec3u) {
     if (idx >= ${numClusters}) {
         return;
     }
+
+    if (cullClusters && activeClusters[idx] == 0u)
+    {
+        clusterSet.clusters[idx].numLights = 0;
+        return;
+    }
+
     let x = idx % ${clusterDimX};
     let y = (idx / ${clusterDimX}) % ${clusterDimY};
     let z = idx / (${clusterDimX} * ${clusterDimY});
