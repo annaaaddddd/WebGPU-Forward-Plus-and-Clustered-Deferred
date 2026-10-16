@@ -238,8 +238,9 @@ Deferred wins on speed here, but it gives up some things that Forward+ keeps.
   only needs a color and a depth target.
 * Deferred needs two render passes, an extra bind group and G-buffer formats that both shaders must
   agree on, so it is more code to write and keep in sync.
-* Forward+ with the depth prepass keeps all of these advantages and closes most of the gap: 12.0 ms
-  against 9.8 ms for Deferred at 5000 lights, down from 28.1 ms without the prepass.
+* Forward+ with the depth prepass keeps the transparency, MSAA and memory advantages and closes most
+  of the gap: 12.0 ms against 9.8 ms for Deferred at 5000 lights, down from 28.1 ms without the
+  prepass.
 
 Clustering itself has costs that both clustered renderers pay.
 
@@ -275,7 +276,8 @@ Clustered Deferred against Forward+:
 * More overdraw favors Deferred and Forward+ with a prepass, since both light each pixel about once.
 * At a few hundred lights Deferred and Forward+ with a prepass are both near the 3 ms minimum, and
   the choice between them matters little on this GPU.
-* Transparency, MSAA or a tight memory budget favor Forward+, best with the prepass.
+* Transparency, MSAA or a tight memory budget favor Forward+, best with the prepass. These follow
+  from how the two renderers work and were not measured here.
 
 ## Extra: Depth prepass
 
@@ -378,7 +380,7 @@ visible surface.
 ### Results
 
 > Culling removes 85% of the non-empty clusters, but the clustering pass still takes 1.57 ms. Its
-> time is set by how long each thread's loop over all lights takes, not by the number of threads.
+> time follows the light count, not the number of clusters it processes.
 
 Readback at 5000 lights in the default view with `forward+ prepass cull`, 20 samples over 10 s:
 
@@ -465,7 +467,7 @@ The reason is the shape of a cluster.
 * A light of radius 2 reaches a cluster if its center is within 2 units of the cluster's box, so the
   number of lights per cluster grows roughly with (w + 4)(h + 4)(dz + 4). The longest side
   dominates this product.
-* A rough estimate at d = 10 follows the measured order and comes close in size:
+* A rough estimate at d = 10 follows the measured order and is within 14 percentage points of it:
 
 | Grid | Estimated lights per cluster | Measured F+ render |
 |---|---:|---:|
