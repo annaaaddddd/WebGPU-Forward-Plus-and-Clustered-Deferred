@@ -1,0 +1,5 @@
+round,mode,numLights,view,canvasWidth,canvasHeight,maxLightsPerCluster,frames,mean_ms,median_ms,gpu_clustering_ms,gpu_prepass_ms,gpu_render_ms,gpu_gbuffer_ms,gpu_fullscreen_ms,gpu_total_ms,start_time
+1,forward+ prepass,500,default,2560,1271,1024,600,3.606,3.400,0.197,0.393,0.983,,,1.573,22:54:21
+2,forward+ prepass,500,default,2560,1271,1024,600,5.612,5.900,0.328,0.524,1.704,,,2.556,22:54:26
+3,forward+ prepass,500,default,2560,1271,1024,600,5.537,5.900,0.328,0.590,1.704,,,2.490,22:54:33
+4,forward+ prepass,500,default,2560,1271,1024,600,5.317,5.700,0.328,0.590,1.966,,,2.949,22:54:40

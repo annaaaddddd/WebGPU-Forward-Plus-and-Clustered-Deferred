@@ -1,0 +1,10 @@
+segment,start,end,duration_s,clocks_sm_mhz_range,clocks_mem_mhz,utilization_gpu_pct_range,note
+round1 naive 5000,22:45:43,22:48:18,155,1785-1905,10251,92-100,GPU busy 350 ms per frame
+round1 forward+ prepass 5000,22:48:18,22:48:25,7,1875-1980,10251,56-72,GPU busy 9 ms per 11 ms frame
+round1 naive 500,22:48:25,22:48:42,17,1770-1920,10251,86-93,
+round1 forward+ prepass 500,22:48:42,22:48:45,3,1980 then 1335,10251 then 5001,27-41,memory clock halves and SM clock starts to drop within 3 s
+round2 naive 5000,22:48:45,22:51:18,153,1755-1890,10251,94-100,
+round2 forward+ prepass 5000,22:51:18,22:51:25,7,1860-1980,10251,56-75,
+round2 naive 500,22:51:25,22:51:42,17,1830-1965,10251,80-92,
+round2 forward+ prepass 500,22:51:42,22:51:45,3,1980 then 1440,10251 then 5001,28-43,same drop as round 1
+after benchmark (normal render loop),22:51:45,22:51:56,11,1440-1995,5001 mostly,29-44,uncontrolled

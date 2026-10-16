@@ -1,0 +1,2 @@
+mode,numLights,cap,frames,intervalMs,clusters,activeClusters,nonEmptyClusters,fullClusters,fullClustersPeak,maxLights,maxLightsPeak,meanLightsNonEmpty,note
+forward+ prepass cull,5000,1024,20,500,3456,310,310,6,26,1024,1024,325.5,camera pos [7.90 2.02 -1.36] yaw 162.2 pitch -3.0; 20 samples over 10 s

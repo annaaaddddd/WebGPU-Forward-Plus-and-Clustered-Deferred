@@ -1,0 +1,13 @@
+round,mode,numLights,view,canvasWidth,canvasHeight,maxLightsPerCluster,frames,mean_ms,median_ms,gpu_clustering_ms,gpu_prepass_ms,gpu_render_ms,gpu_gbuffer_ms,gpu_fullscreen_ms,gpu_total_ms
+1,clustered deferred,500,default,2560,1271,1024,200,3.511,3.400,0.131,,,0.459,0.655,1.245
+1,forward+ prepass,500,default,2560,1271,1024,200,3.716,3.200,0.262,0.459,1.114,,,1.835
+1,clustered deferred,1000,default,2560,1271,1024,200,5.808,6.000,0.459,,,0.590,1.769,2.818
+1,forward+ prepass,1000,default,2560,1271,1024,200,5.796,6.000,0.524,0.393,1.901,,,2.818
+2,clustered deferred,500,default,2560,1271,1024,200,4.268,3.700,0.262,,,0.655,1.114,2.032
+2,forward+ prepass,500,default,2560,1271,1024,200,5.721,6.000,0.328,0.590,1.573,,,2.556
+2,clustered deferred,1000,default,2560,1271,1024,200,5.709,5.900,0.524,,,0.721,2.228,3.473
+2,forward+ prepass,1000,default,2560,1271,1024,200,5.696,5.600,0.524,0.459,2.425,,,3.473
+3,clustered deferred,500,default,2560,1271,1024,200,5.552,5.900,0.328,,,0.786,1.376,2.490
+3,forward+ prepass,500,default,2560,1271,1024,200,5.702,6.000,0.328,0.590,1.704,,,2.687
+3,clustered deferred,1000,default,2560,1271,1024,200,5.845,6.000,0.524,,,0.655,2.163,3.342
+3,forward+ prepass,1000,default,2560,1271,1024,200,5.687,5.600,0.590,0.459,2.425,,,3.473
