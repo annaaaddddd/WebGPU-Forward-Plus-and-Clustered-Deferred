@@ -15,7 +15,7 @@ import { constants } from './shaders/shaders';
 type Sample = { ms: number, passes: PassTiming[] };
 
 // one csv column per pass label
-const PASS_COLUMNS = ['clustering', 'render', 'gbuffer', 'fullscreen'];
+const PASS_COLUMNS = ['clustering', 'prepass', 'render', 'gbuffer', 'fullscreen'];
 
 export function setupBenchmark(lights: Lights, camera: Camera, setRenderer: (mode: string) => void) {
     let sink: ((s: Sample) => void) | undefined;
@@ -51,7 +51,7 @@ export function setupBenchmark(lights: Lights, camera: Camera, setRenderer: (mod
 
     (window as any).benchmark = async ({
         lightCounts = [500, 1000, 2000, 5000],
-        modes = ['naive', 'forward+', 'clustered deferred'],
+        modes = ['naive', 'forward+', 'forward+ prepass', 'clustered deferred'],
         rounds = 3,
         frames = 200,
         warmup = 30,
@@ -82,6 +82,8 @@ export function setupBenchmark(lights: Lights, camera: Camera, setRenderer: (mod
                     lights.numLights = count;
                     lights.updateLightSetUniformNumLights();
                     setRenderer(mode);
+                    // wall-clock stamp so the run can be lined up with external logs (e.g. nvidia-smi -l 1)
+                    // console.log(`benchmark: ${new Date().toTimeString().slice(0, 8)} round ${round} ${mode} ${count}`);
 
                     await sample(warmup);
                     const samples = await sample(frames);
