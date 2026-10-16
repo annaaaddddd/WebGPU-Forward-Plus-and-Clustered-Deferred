@@ -38,7 +38,7 @@
   <rect x="170.0" y="184" width="24.2" height="34" fill="#9aa0a6"/>
   <rect x="194.2" y="184" width="7.0" height="34" fill="#f2b134"/>
   <rect x="201.2" y="184" width="84.5" height="34" fill="#1baf7a"/>
-  <text x="243.5" y="206" text-anchor="middle" fill="#ffffff" font-size="11">5.50</text>
+  <text x="243.5" y="206" text-anchor="middle" fill="#ffffff" font-size="11">5.51</text>
   <text x="291.7" y="206" fill="#333" font-size="11">7.54 ms</text>
   <text x="20" y="272" fill="#888" font-size="11">Source: results/results_4modes_cap1024_2560x1271_gpu_3rounds.csv. Prepass 0.26 ms, G-buffer 0.46 ms.</text>
   <text x="20" y="286" fill="#888" font-size="11">Naive (349 ms of GPU time) is left out.</text>
