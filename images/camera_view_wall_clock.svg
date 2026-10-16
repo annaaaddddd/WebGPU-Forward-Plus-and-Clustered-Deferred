@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="360" viewBox="0 0 720 360" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12">
+  <rect width="720" height="360" fill="#ffffff"/>
+  <text x="60" y="22" font-size="14" font-weight="600" fill="#222">Wall clock by camera view (warm-up sessions, median of 3 rounds, 2560x1271)</text>
+  <rect x="60" y="34" width="12" height="12" rx="2" fill="#5b6b7f"/><text x="77" y="44" fill="#444">default view</text>
+  <rect x="170" y="34" width="12" height="12" rx="2" fill="#2aa1b3"/><text x="187" y="44" fill="#444">far-end view</text>
+  <g stroke="#e3e3e3" stroke-width="1">
+    <line x1="60" y1="290.0" x2="700" y2="290.0"/>
+    <line x1="60" y1="255.6" x2="700" y2="255.6"/>
+    <line x1="60" y1="221.2" x2="700" y2="221.2"/>
+    <line x1="60" y1="186.9" x2="700" y2="186.9"/>
+    <line x1="60" y1="152.5" x2="700" y2="152.5"/>
+    <line x1="60" y1="118.1" x2="700" y2="118.1"/>
+    <line x1="60" y1="83.8" x2="700" y2="83.8"/>
+  </g>
+  <g fill="#666" text-anchor="end">
+    <text x="52" y="294.0">0 ms</text>
+    <text x="52" y="259.6">5 ms</text>
+    <text x="52" y="225.2">10 ms</text>
+    <text x="52" y="190.9">15 ms</text>
+    <text x="52" y="156.5">20 ms</text>
+    <text x="52" y="122.1">25 ms</text>
+    <text x="52" y="87.8">30 ms</text>
+  </g>
+  <rect x="80" y="200.6" width="30" height="89.4" fill="#5b6b7f"/>
+  <text x="95.0" y="195.6" text-anchor="middle" fill="#333" font-size="10.5">13.0</text>
+  <rect x="112" y="200.6" width="30" height="89.4" fill="#2aa1b3"/>
+  <text x="127.0" y="195.6" text-anchor="middle" fill="#333" font-size="10.5">13.0</text>
+  <text x="111.0" y="306" text-anchor="middle" fill="#444" font-size="11">Forward+</text>
+  <rect x="180" y="248.8" width="30" height="41.2" fill="#5b6b7f"/>
+  <text x="195.0" y="243.8" text-anchor="middle" fill="#333" font-size="10.5">6.0</text>
+  <rect x="212" y="249.4" width="30" height="40.6" fill="#2aa1b3"/>
+  <text x="227.0" y="244.4" text-anchor="middle" fill="#333" font-size="10.5">5.9</text>
+  <text x="211.0" y="306" text-anchor="middle" fill="#444" font-size="11">F+ prepass</text>
+  <rect x="280" y="250.1" width="30" height="39.9" fill="#5b6b7f"/>
+  <text x="295.0" y="245.1" text-anchor="middle" fill="#333" font-size="10.5">5.8</text>
+  <rect x="312" y="248.8" width="30" height="41.2" fill="#2aa1b3"/>
+  <text x="327.0" y="243.8" text-anchor="middle" fill="#333" font-size="10.5">6.0</text>
+  <text x="311.0" y="306" text-anchor="middle" fill="#444" font-size="11">Deferred</text>
+  <text x="210" y="328" text-anchor="middle" fill="#222" font-weight="600">2000 lights</text>
+  <rect x="400" y="90.6" width="30" height="199.4" fill="#5b6b7f"/>
+  <text x="415.0" y="85.6" text-anchor="middle" fill="#333" font-size="10.5">29.0</text>
+  <rect x="432" y="83.8" width="30" height="206.2" fill="#2aa1b3"/>
+  <text x="447.0" y="78.8" text-anchor="middle" fill="#333" font-size="10.5">30.0</text>
+  <text x="431.0" y="306" text-anchor="middle" fill="#444" font-size="11">Forward+</text>
+  <rect x="500" y="214.4" width="30" height="75.6" fill="#5b6b7f"/>
+  <text x="515.0" y="209.4" text-anchor="middle" fill="#333" font-size="10.5">11.0</text>
+  <rect x="532" y="219.9" width="30" height="70.1" fill="#2aa1b3"/>
+  <text x="547.0" y="214.9" text-anchor="middle" fill="#333" font-size="10.5">10.2</text>
+  <text x="531.0" y="306" text-anchor="middle" fill="#444" font-size="11">F+ prepass</text>
+  <rect x="600" y="230.9" width="30" height="59.1" fill="#5b6b7f"/>
+  <text x="615.0" y="225.9" text-anchor="middle" fill="#333" font-size="10.5">8.6</text>
+  <rect x="632" y="235.0" width="30" height="55.0" fill="#2aa1b3"/>
+  <text x="647.0" y="230.0" text-anchor="middle" fill="#333" font-size="10.5">8.0</text>
+  <text x="631.0" y="306" text-anchor="middle" fill="#444" font-size="11">Deferred</text>
+  <text x="530" y="328" text-anchor="middle" fill="#222" font-weight="600">5000 lights</text>
+  <line x1="60" y1="290" x2="700" y2="290" stroke="#999"/>
+  <text x="60" y="340" fill="#888" font-size="11">Source: results/results_warm_cap1024_2560x1271_{default,far-end-diag}_gpu_3rounds.csv.</text>
+  <text x="60" y="354" fill="#888" font-size="11">Naive (140 to 362 ms) is left out.</text>
+</svg>

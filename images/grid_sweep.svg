@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="380" viewBox="0 0 760 380" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12">
+  <rect width="760" height="380" fill="#ffffff"/>
+  <text x="60" y="22" font-size="14" font-weight="600" fill="#222">Wall clock vs cluster grid, 5000 lights (median of 3 rounds, warm, cap 1024)</text>
+  <rect x="60" y="34" width="12" height="12" rx="2" fill="#eb6834"/><text x="77" y="44" fill="#444">F+</text>
+  <rect x="115" y="34" width="12" height="12" rx="2" fill="#8a63d2"/><text x="132" y="44" fill="#444">F+ prepass</text>
+  <rect x="226" y="34" width="12" height="12" rx="2" fill="#1baf7a"/><text x="243" y="44" fill="#444">Deferred</text>
+  <g stroke="#e3e3e3" stroke-width="1">
+    <line x1="60" y1="290.0" x2="740" y2="290.0"/>
+    <line x1="60" y1="244.0" x2="740" y2="244.0"/>
+    <line x1="60" y1="198.0" x2="740" y2="198.0"/>
+    <line x1="60" y1="152.0" x2="740" y2="152.0"/>
+    <line x1="60" y1="106.0" x2="740" y2="106.0"/>
+    <line x1="60" y1="60.0" x2="740" y2="60.0"/>
+  </g>
+  <g fill="#666" text-anchor="end">
+    <text x="52" y="294.0">0 ms</text>
+    <text x="52" y="248.0">10 ms</text>
+    <text x="52" y="202.0">20 ms</text>
+    <text x="52" y="156.0">30 ms</text>
+    <text x="52" y="110.0">40 ms</text>
+    <text x="52" y="64.0">50 ms</text>
+  </g>
+  <text x="230.0" y="338" text-anchor="middle" fill="#444">XY tiles, 24 slices</text>
+  <rect x="73.7" y="126.2" width="26" height="163.8" fill="#eb6834"/>
+  <text x="86.7" y="121.2" text-anchor="middle" fill="#333" font-size="10">35.6</text>
+  <rect x="103.7" y="229.7" width="26" height="60.3" fill="#8a63d2"/>
+  <text x="116.7" y="224.7" text-anchor="middle" fill="#333" font-size="10">13.1</text>
+  <rect x="133.7" y="239.9" width="26" height="50.1" fill="#1baf7a"/>
+  <text x="146.7" y="234.9" text-anchor="middle" fill="#333" font-size="10">10.9</text>
+  <text x="116.7" y="306" text-anchor="middle" fill="#222" font-weight="600">8x5x24</text>
+  <text x="116.7" y="320" text-anchor="middle" fill="#777" font-size="10">960 clusters</text>
+  <rect x="187.0" y="156.6" width="26" height="133.4" fill="#eb6834"/>
+  <text x="200.0" y="151.6" text-anchor="middle" fill="#333" font-size="10">29.0</text>
+  <rect x="217.0" y="239.4" width="26" height="50.6" fill="#8a63d2"/>
+  <text x="230.0" y="234.4" text-anchor="middle" fill="#333" font-size="10">11.0</text>
+  <rect x="247.0" y="250.4" width="26" height="39.6" fill="#1baf7a"/>
+  <text x="260.0" y="245.4" text-anchor="middle" fill="#333" font-size="10">8.6</text>
+  <text x="230.0" y="306" text-anchor="middle" fill="#222" font-weight="600">16x9x24</text>
+  <text x="230.0" y="320" text-anchor="middle" fill="#777" font-size="10">3456 clusters</text>
+  <rect x="300.3" y="172.7" width="26" height="117.3" fill="#eb6834"/>
+  <text x="313.3" y="167.7" text-anchor="middle" fill="#333" font-size="10">25.5</text>
+  <rect x="330.3" y="239.4" width="26" height="50.6" fill="#8a63d2"/>
+  <text x="343.3" y="234.4" text-anchor="middle" fill="#333" font-size="10">11.0</text>
+  <rect x="360.3" y="247.2" width="26" height="42.8" fill="#1baf7a"/>
+  <text x="373.3" y="242.2" text-anchor="middle" fill="#333" font-size="10">9.3</text>
+  <text x="343.3" y="306" text-anchor="middle" fill="#222" font-weight="600">32x18x24</text>
+  <text x="343.3" y="320" text-anchor="middle" fill="#777" font-size="10">13824 clusters</text>
+  <text x="570.0" y="338" text-anchor="middle" fill="#444">Z slices, 16x9 tiles</text>
+  <line x1="400.0" y1="60" x2="400.0" y2="290" stroke="#bbb" stroke-dasharray="4 4"/>
+  <rect x="413.7" y="75.2" width="26" height="214.8" fill="#eb6834"/>
+  <text x="426.7" y="70.2" text-anchor="middle" fill="#333" font-size="10">46.7</text>
+  <rect x="443.7" y="216.9" width="26" height="73.1" fill="#8a63d2"/>
+  <text x="456.7" y="211.9" text-anchor="middle" fill="#333" font-size="10">15.9</text>
+  <rect x="473.7" y="229.7" width="26" height="60.3" fill="#1baf7a"/>
+  <text x="486.7" y="224.7" text-anchor="middle" fill="#333" font-size="10">13.1</text>
+  <text x="456.7" y="306" text-anchor="middle" fill="#222" font-weight="600">16x9x12</text>
+  <text x="456.7" y="320" text-anchor="middle" fill="#777" font-size="10">1728 clusters</text>
+  <rect x="527.0" y="156.6" width="26" height="133.4" fill="#eb6834"/>
+  <text x="540.0" y="151.6" text-anchor="middle" fill="#333" font-size="10">29.0</text>
+  <rect x="557.0" y="239.4" width="26" height="50.6" fill="#8a63d2"/>
+  <text x="570.0" y="234.4" text-anchor="middle" fill="#333" font-size="10">11.0</text>
+  <rect x="587.0" y="250.4" width="26" height="39.6" fill="#1baf7a"/>
+  <text x="600.0" y="245.4" text-anchor="middle" fill="#333" font-size="10">8.6</text>
+  <text x="570.0" y="306" text-anchor="middle" fill="#222" font-weight="600">16x9x24</text>
+  <text x="570.0" y="320" text-anchor="middle" fill="#777" font-size="10">3456 clusters</text>
+  <rect x="640.3" y="192.0" width="26" height="98.0" fill="#eb6834"/>
+  <text x="653.3" y="187.0" text-anchor="middle" fill="#333" font-size="10">21.3</text>
+  <rect x="670.3" y="250.0" width="26" height="40.0" fill="#8a63d2"/>
+  <text x="683.3" y="245.0" text-anchor="middle" fill="#333" font-size="10">8.7</text>
+  <rect x="700.3" y="253.7" width="26" height="36.3" fill="#1baf7a"/>
+  <text x="713.3" y="248.7" text-anchor="middle" fill="#333" font-size="10">7.9</text>
+  <text x="683.3" y="306" text-anchor="middle" fill="#222" font-weight="600">16x9x48</text>
+  <text x="683.3" y="320" text-anchor="middle" fill="#777" font-size="10">6912 clusters</text>
+  <line x1="60" y1="290" x2="740" y2="290" stroke="#999"/>
+</svg>
