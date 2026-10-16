@@ -14,7 +14,8 @@ struct VertexInput
 
 struct VertexOutput
 {
-    @builtin(position) fragPos: vec4f,
+    // invariant: the depth prepass and the main pass must produce bit-identical depth for depthCompare "equal"
+    @invariant @builtin(position) fragPos: vec4f,
     @location(0) pos: vec3f,
     @location(1) nor: vec3f,
     @location(2) uv: vec2f

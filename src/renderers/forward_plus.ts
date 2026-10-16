@@ -11,8 +11,13 @@ export class ForwardPlusRenderer extends renderer.Renderer {
 
     pipeline: GPURenderPipeline;
 
-    constructor(stage: Stage) {
-        super(stage);
+    // options.prepass: draw depth only first, then the main pass only shades fragments that match
+    // that depth, so hidden surfaces don't run the lighting loop
+    prepassPipeline: GPURenderPipeline | undefined;
+
+    constructor(stage: Stage, options: renderer.RendererOptions = {}) {
+        super(stage, options);
+        const prepass = options.prepass ?? false;
 
         this.sceneUniformsBindGroupLayout = renderer.device.createBindGroupLayout({
             label: "scene uniforms bind group layout",
@@ -57,20 +62,54 @@ export class ForwardPlusRenderer extends renderer.Renderer {
         this.depthTexture = renderer.device.createTexture({
             size: [renderer.canvas.width, renderer.canvas.height],
             format: "depth24plus",
-            usage: GPUTextureUsage.RENDER_ATTACHMENT
+            // TEXTURE_BINDING so a later pass can read the prepass depth (cluster culling)
+            usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING
         });
         this.depthTextureView = this.depthTexture.createView();
 
+        const pipelineLayout = renderer.device.createPipelineLayout({
+            label: "forward plus pipeline layout",
+            bindGroupLayouts: [
+                this.sceneUniformsBindGroupLayout,
+                renderer.modelBindGroupLayout,
+                renderer.materialBindGroupLayout
+            ]
+        });
+
+        if (prepass) {
+            this.prepassPipeline = renderer.device.createRenderPipeline({
+                label: "forward plus depth prepass pipeline",
+                layout: pipelineLayout,
+                depthStencil: {
+                    depthWriteEnabled: true,
+                    depthCompare: "less",
+                    format: "depth24plus"
+                },
+                vertex: {
+                    module: renderer.device.createShaderModule({
+                        label: "forward plus depth prepass vert shader",
+                        code: shaders.naiveVertSrc
+                    }),
+                    buffers: [ renderer.vertexBufferLayout ]
+                },
+                fragment: {
+                    module: renderer.device.createShaderModule({
+                        label: "forward plus depth prepass frag shader",
+                        code: shaders.depthPrepassFragSrc,
+                    }),
+                    targets: [ ] // depth only, no color target
+                }
+            });
+        }
+
         this.pipeline = renderer.device.createRenderPipeline({
-            layout: renderer.device.createPipelineLayout({
-                label: "forward plus pipeline layout",
-                bindGroupLayouts: [
-                    this.sceneUniformsBindGroupLayout,
-                    renderer.modelBindGroupLayout,
-                    renderer.materialBindGroupLayout
-                ]
-            }),
-            depthStencil: {
+            label: prepass ? "forward plus pipeline (after prepass)" : "forward plus pipeline",
+            layout: pipelineLayout,
+            depthStencil: prepass ? {
+                depthWriteEnabled: false,
+                depthCompare: "equal",
+                format: "depth24plus"
+            } : {
                 depthWriteEnabled: true,
                 depthCompare: "less",
                 format: "depth24plus"
@@ -96,11 +135,43 @@ export class ForwardPlusRenderer extends renderer.Renderer {
         });
     }
 
+    // records the scene draw calls into a pass; used by the prepass and the main pass
+    private drawScene(pass: GPURenderPassEncoder) {
+        pass.setBindGroup(shaders.constants.bindGroup_scene, this.sceneUniformsBindGroup);
+
+        this.scene.iterate(node => {
+            pass.setBindGroup(shaders.constants.bindGroup_model, node.modelBindGroup);
+        }, material => {
+            pass.setBindGroup(shaders.constants.bindGroup_material, material.materialBindGroup);
+        }, primitive => {
+            pass.setVertexBuffer(0, primitive.vertexBuffer);
+            pass.setIndexBuffer(primitive.indexBuffer, 'uint32');
+            pass.drawIndexed(primitive.numIndices);
+        });
+    }
+
     override draw() {
         const encoder = renderer.device.createCommandEncoder();
         const canvasTextureView = renderer.context.getCurrentTexture().createView();
 
         this.lights.doLightClustering(encoder);
+
+        if (this.options.prepass) {
+            const prepass = encoder.beginRenderPass({
+                label: "forward plus depth prepass",
+                timestampWrites: renderer.gpuTimer.pass("prepass"),
+                colorAttachments: [ ],
+                depthStencilAttachment: {
+                    view: this.depthTextureView,
+                    depthClearValue: 1.0,
+                    depthLoadOp: "clear",
+                    depthStoreOp: "store"
+                }
+            });
+            prepass.setPipeline(this.prepassPipeline!);
+            this.drawScene(prepass);
+            prepass.end();
+        }
 
         const renderPass = encoder.beginRenderPass({
             label: "forward plus render pass",
@@ -116,24 +187,12 @@ export class ForwardPlusRenderer extends renderer.Renderer {
             depthStencilAttachment: {
                 view: this.depthTextureView,
                 depthClearValue: 1.0,
-                depthLoadOp: "clear",
+                depthLoadOp: this.options.prepass ? "load" : "clear",
                 depthStoreOp: "store"
             }
         });
         renderPass.setPipeline(this.pipeline);
-
-        renderPass.setBindGroup(shaders.constants.bindGroup_scene, this.sceneUniformsBindGroup);
-
-        this.scene.iterate(node => {
-            renderPass.setBindGroup(shaders.constants.bindGroup_model, node.modelBindGroup);
-        }, material => {
-            renderPass.setBindGroup(shaders.constants.bindGroup_material, material.materialBindGroup);
-        }, primitive => {
-            renderPass.setVertexBuffer(0, primitive.vertexBuffer);
-            renderPass.setIndexBuffer(primitive.indexBuffer, 'uint32');
-            renderPass.drawIndexed(primitive.numIndices);
-        });
-
+        this.drawScene(renderPass);
         renderPass.end();
 
         renderer.gpuTimer.resolve(encoder);

@@ -184,10 +184,17 @@ export const vertexBufferLayout: GPUVertexBufferLayout = {
     ]
 };
 
+// per-renderer switches; each one adds or changes a pass and is off by default, so one class can
+// serve several benchmark modes (e.g. 'forward+' and 'forward+ prepass') in the same session
+export type RendererOptions = {
+    prepass?: boolean   // Forward+: depth-only prepass, then shade only the visible surface
+};
+
 export abstract class Renderer {
     protected scene: Scene;
     protected lights: Lights;
     protected camera: Camera;
+    protected options: RendererOptions;
 
     protected stats: Stats;
 
@@ -195,11 +202,12 @@ export abstract class Renderer {
     private frameRequestId: number;
     private stopped = false;
 
-    constructor(stage: Stage) {
+    constructor(stage: Stage, options: RendererOptions = {}) {
         this.scene = stage.scene;
         this.lights = stage.lights;
         this.camera = stage.camera;
         this.stats = stage.stats;
+        this.options = options;
 
         this.frameRequestId = requestAnimationFrame((t) => this.onFrame(t));
     }
