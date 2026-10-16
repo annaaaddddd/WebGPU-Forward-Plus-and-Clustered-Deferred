@@ -230,7 +230,7 @@ export class Lights {
         });
     }
 
-    // the depth texture belongs to the renderer, so each renderer that culls makes its own bind group once
+    // each culling renderer makes its own bind group for its depth texture
     createMarkClustersBindGroup(depthTextureView: GPUTextureView): GPUBindGroup {
         return device.createBindGroup({
             label: "mark clusters bind group",
@@ -243,8 +243,8 @@ export class Lights {
         });
     }
 
-    // clears last frame's flags, then marks the clusters behind every pixel of the depth buffer.
-    // Must run after the pass that wrote the depth and before doLightClustering(encoder, true).
+    // clear the flags, then mark clusters from the depth buffer
+    // run after the depth pass and before doLightClustering(encoder, true)
     markActiveClusters(encoder: GPUCommandEncoder, markBindGroup: GPUBindGroup) {
         encoder.clearBuffer(this.clusterActiveBuffer);
 

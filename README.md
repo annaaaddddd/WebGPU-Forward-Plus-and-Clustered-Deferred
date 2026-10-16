@@ -33,7 +33,7 @@ Main results, at 2560 x 1271 on an RTX 3090 Ti:
 * At 5000 lights Clustered Deferred takes 9.0 ms, Forward+ 29.5 ms and naive 351.8 ms
   ([comparison](#naive-vs-forward-vs-clustered-deferred)).
 * Most of Forward+'s extra lighting work is overdraw. A depth prepass removes it and makes Forward+
-  2.0x to 2.3x faster from 2000 lights up ([Extra: Depth prepass](#extra-depth-prepass)).
+  2.0x to 2.6x faster from 2000 lights up ([Extra: Depth prepass](#extra-depth-prepass)).
 * Cluster culling skips 85% of the non-empty clusters, but the clustering pass takes just as long
   ([Extra: Cluster culling](#extra-cluster-culling)).
 * Doubling the depth slices (24 to 48) cuts the lighting passes by 24% to 31%. Doubling the tiles
@@ -80,9 +80,8 @@ Clustered Deferred renderer.
   * The cap analysis below uses this view together with a readback of the cluster buffer.
 * The heatmap tracks the lighting cost directly. Its red intensity is proportional to the number
   of lights each fragment in that cluster loops over, so brighter red means more work per
-  fragment. With cap 256 at
-  5000 lights the blue clusters are where that loop is cut short, which is why Forward+ drops from
-  about 29.4 to 19.5 ms there (see [Cluster cap](#cluster-cap)).
+  fragment. With cap 256 at 5000 lights the blue clusters are where that loop is cut short, which
+  is why Forward+ drops from about 29.4 to 19.5 ms there (see [Cluster cap](#cluster-cap)).
 
 | Cluster id (500 lights) | Lights-per-cluster heatmap (500 lights, cap 256) |
 |---|---|
@@ -136,8 +135,8 @@ often measure about 6 ms there, because the GPU lowers its clock at such a light
 *Forward+ with the depth prepass was measured in a separate session, see
 [Extra: Depth prepass](#extra-depth-prepass).*
 
-> Clustered Deferred is the fastest at every light count and Forward+ is second. At 5000 lights
-> Deferred takes 9.0 ms, Forward+ 29.5 ms and naive 351.8 ms.
+> Of the three base renderers, Clustered Deferred is the fastest at every light count and Forward+
+> is second. At 5000 lights Deferred takes 9.0 ms, Forward+ 29.5 ms and naive 351.8 ms.
 
 GPU time per pass, from the main run (`results_cap1024_2560x1271_gpu_3rounds.csv`, median of 3
 rounds). F+ is Forward+ and D is Deferred.
@@ -255,7 +254,7 @@ Forward+ against naive:
 * Best case: many lights spread over the scene, so each cluster holds a small share of them. The
   speedup grows from 6.0x at 500 lights to 11.9x at 5000.
 * Worst case: very few lights, where the clustering pass and the fixed overhead dominate. With
-  1 light Forward+ takes 3.4 to 5.0 ms and naive 3.0 ms.
+  1 light Forward+ takes 3.4 and 5.0 ms (median of two sessions) and naive 3.0 ms.
 * Lights large enough to touch every cluster would also remove the gain, since every fragment would
   loop over all lights again. The light radius is fixed at 2, so this was not measured.
 
@@ -295,7 +294,8 @@ benchmark session.
 ### Results
 
 > The prepass cuts the Forward+ render pass to about a third at every light count and makes Forward+
-> 2.0x to 2.3x faster from 2000 lights up. At 5000 lights it still trails Deferred (12.0 vs 9.8 ms).
+> 2.0x to 2.3x faster from 2000 lights up in this session (2.2x to 2.6x in the warm-up session). At
+> 5000 lights it still trails Deferred (12.0 vs 9.8 ms).
 
 All four modes were run in one session (`results_4modes_cap1024_2560x1271_gpu_3rounds.csv`, median
 of 3 rounds). Wall clock and GPU times in ms.
@@ -380,7 +380,7 @@ visible surface.
 > Culling removes 85% of the non-empty clusters, but the clustering pass still takes 1.57 ms. Its
 > time is set by how long each thread's loop over all lights takes, not by the number of threads.
 
-Readback at 5000 lights with `forward+ prepass cull`, 20 samples over 10 s:
+Readback at 5000 lights in the default view with `forward+ prepass cull`, 20 samples over 10 s:
 
 * 287 clusters are active, 8% of all 3456, against about 1946 non-empty clusters without culling.
 * All of them are in slices 7 to 13 (depth 1.5 to 21.5). No visible surface is closer than slice 7,
@@ -438,8 +438,8 @@ camera view.
 ### Cluster grid
 
 The grid size is a compile-time constant, so each grid was measured in its own page session after
-changing `clusterDimX/Y/Z` (`results_grid_*_warm_cap1024_2560x1271_5000lights_3rounds.csv`; the
-16 x 9 x 24 numbers come from the warm-up run in the default view). All runs use 5000 lights, the
+changing `clusterDimX/Y/Z` (`results_grid_*_warm_cap1024_2560x1271_5000lights_3rounds.csv`). The
+16 x 9 x 24 numbers come from the warm-up run in the default view. All runs use 5000 lights, the
 default view and the warm-up, median of 3 rounds. Since every grid is a separate session,
 differences of a few tenths of a millisecond are not meaningful.
 
@@ -514,7 +514,7 @@ Readback at 5000 lights, 20 samples over 10 s. About 1946 of the 3456 clusters a
 | 1024 | 0         | 52 to 57 (3%) | 824 to 827 | 1024 | 14.2 MB |
 | 2048 | 0         | 0          | 842 | 1345 | 28.3 MB |
 
-*Percentages are of the non-empty clusters. Cap 1024 was sampled twice; both results are shown.*
+*Percentages are of the non-empty clusters. Cap 1024 was sampled twice, and both results are shown.*
 
 > In the default view at 5000 lights, a cap of 1024 drops lights only at peak moments, in at most 3%
 > of the clusters. Within the sampled 10 s, 2048 is the smallest power of two that never drops a
@@ -526,7 +526,7 @@ Readback at 5000 lights, 20 samples over 10 s. About 1946 of the 3456 clusters a
   * So a cap of 256 already drops lights at 2000 lights in a typical frame, which matches the blue
     clusters in the first heatmap.
   * A cap of 512 would only be exceeded at peak moments.
-  * Both points follow from the cap-1024 readback; I did not read back at cap 256 or 512 with
+  * Both points follow from the cap-1024 readback. I did not read back at cap 256 or 512 with
     2000 lights.
 
 #### Effect on timing
@@ -554,7 +554,7 @@ Wall clock from the four sessions that alternated between the two caps (ms, one 
 
 Cap 2048 at 5000 lights gives Forward+ 29.0 ms and Deferred 9.0 ms, inside the cap-1024 ranges
 (28.0 to 30.5 and 8.4 to 10.0). The few lights that 1024 drops at peak moments have no measurable
-effect on timing, so the main table measured at cap 1024 stands. The code uses 1024 by default; 2048
+effect on timing, so the main table measured at cap 1024 stands. The code uses 1024 by default. 2048
 removes the remaining drops at the cost of a 28.3 MB buffer.
 
 The right cap also depends on the view. In the second camera view (see

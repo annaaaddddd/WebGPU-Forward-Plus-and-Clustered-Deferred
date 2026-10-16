@@ -15,8 +15,7 @@ export class ForwardPlusRenderer extends renderer.Renderer {
     // that depth, so hidden surfaces don't run the lighting loop
     prepassPipeline: GPURenderPipeline | undefined;
 
-    // options.cullClusters: after the prepass, mark the clusters behind visible pixels and only
-    // cluster lights for those (needs the prepass depth, so it requires options.prepass)
+    // options.cullClusters: mark visible clusters from the prepass depth
     markClustersBindGroup: GPUBindGroup | undefined;
 
     constructor(stage: Stage, options: renderer.RendererOptions = {}) {

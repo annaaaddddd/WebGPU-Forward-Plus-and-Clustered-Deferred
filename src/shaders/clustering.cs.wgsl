@@ -24,11 +24,10 @@
 @group(${bindGroup_scene}) @binding(0) var<storage> lightSet: LightSet;
 @group(${bindGroup_scene}) @binding(1) var<storage, read_write> clusterSet: ClusterSet;
 @group(${bindGroup_scene}) @binding(2) var<uniform> cameraUniforms: CameraUniforms;
-// flags written by mark_clusters.cs.wgsl; only read when cullClusters is set on the pipeline
+// flags from mark_clusters.cs.wgsl, only read when cullClusters is on
 @group(${bindGroup_scene}) @binding(3) var<storage> activeClusters: array<u32>;
 
-// pipeline-overridable constant: the same shader is compiled once with culling off and once with it on
-// (see the `constants` of the two compute pipelines in lights.ts)
+// set per pipeline, so the same shader builds with and without culling
 override cullClusters: bool = false;
 
 @compute 

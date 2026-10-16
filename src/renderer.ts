@@ -184,12 +184,10 @@ export const vertexBufferLayout: GPUVertexBufferLayout = {
     ]
 };
 
-// per-renderer switches; each one adds or changes a pass and is off by default, so one class can
-// serve several benchmark modes (e.g. 'forward+' and 'forward+ prepass') in the same session
+// per-renderer options so one class can serve several benchmark modes
 export type RendererOptions = {
     prepass?: boolean,      // Forward+: depth-only prepass, then shade only the visible surface
-    cullClusters?: boolean  // mark the clusters that hold visible geometry from the depth buffer and
-                            // only cluster lights for those (Forward+ needs prepass for this)
+    cullClusters?: boolean  // only cluster lights for clusters with visible geometry (Forward+ needs prepass)
 };
 
 export abstract class Renderer {

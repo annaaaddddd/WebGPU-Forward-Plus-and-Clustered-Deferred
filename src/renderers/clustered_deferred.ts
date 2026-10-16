@@ -27,8 +27,7 @@ export class ClusteredDeferredRenderer extends renderer.Renderer {
 
     fullscreenPipeline: GPURenderPipeline;
 
-    // options.cullClusters: mark the clusters behind the G-buffer's visible pixels and only cluster
-    // lights for those; the G-buffer pass already provides the depth, so no extra geometry pass
+    // options.cullClusters: mark visible clusters from the G-buffer depth
     markClustersBindGroup: GPUBindGroup | undefined;
 
     constructor(stage: Stage, options: renderer.RendererOptions = {}) {

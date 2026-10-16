@@ -57,8 +57,7 @@ export function setupBenchmark(lights: Lights, camera: Camera, setRenderer: (mod
         warmup = 30,
         view = 'default',
         camera: pose = undefined as { pos: [number, number, number], yaw: number, pitch: number } | undefined,
-        // warm: before every configuration, render naive at 5000 lights for a few frames (about 2 s of
-        // fully loaded GPU) so the clocks are high when the measured frames start; see the clock notes in the README
+        // warm: run naive at 5000 lights for a few frames first so the gpu clock is up
         warm = false,
         warmFrames = 6,
         // print a wall-clock stamp per configuration, to line the run up with an nvidia-smi log
@@ -135,8 +134,8 @@ export function setupBenchmark(lights: Lights, camera: Camera, setRenderer: (mod
     };
 
     // reads back the cluster buffer and reports how full the clusters are, overall and per slice
-    // samples are spread out since the lights keep moving. `mode` picks the renderer (naive doesn't
-    // cluster); in a cull mode the active-cluster flags are read back too and reported as activeClusters
+    // samples are spread out since the lights keep moving
+    // mode picks the renderer, cull modes also read back the active flags
     (window as any).clusterStats = async ({
         numLights = lights.numLights,
         frames = 10,

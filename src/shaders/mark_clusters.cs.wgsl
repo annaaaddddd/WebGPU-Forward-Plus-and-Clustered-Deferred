@@ -1,7 +1,5 @@
-// depth-based cluster culling, step 1: mark the clusters that contain visible geometry.
-// One thread per pixel reads the depth buffer written by the prepass (Forward+) or the G-buffer pass
-// (Deferred), finds the cluster that pixel's surface falls into and sets its flag. The clustering
-// pass then skips every cluster whose flag is still 0.
+// marks clusters that contain visible geometry, one thread per pixel of the depth buffer
+// the clustering pass then skips clusters whose flag is still 0
 
 @group(0) @binding(0) var<uniform> cameraUniforms: CameraUniforms;
 @group(0) @binding(1) var depthTex: texture_depth_2d;

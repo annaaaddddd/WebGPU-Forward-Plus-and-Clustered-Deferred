@@ -11,7 +11,7 @@ struct FragmentInput
 @fragment
 fn main(in: FragmentInput)
 {
-    // sample the alpha and discard below 0.5; there is nothing to return
+    // alpha test only, nothing to return
     let sample = textureSample(diffuseTex, diffuseTexSampler, in.uv);
     if (sample.a < 0.5)
     {
